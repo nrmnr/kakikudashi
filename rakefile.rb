@@ -1,5 +1,6 @@
 #! ruby
 # coding: utf-8
+$LOAD_PATH << "."
 
 require "kakikudashi"
 
