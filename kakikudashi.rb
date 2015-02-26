@@ -24,7 +24,7 @@ class Kunten
     end
   end
 
-  def to_kan_furi
+  def to_kan_furi index
     case @kanji
     when "不"
       case @kana
@@ -40,8 +40,14 @@ class Kunten
       return "しむ" if @kana == "ム"
     when "見", "被"
       return "る" if @kana.empty?
-    when "如", "若"
+    when "如"
       return "ごとし" if @kana == "シ"
+    when "若"
+      if @kana == "シ"
+        return "もし" if index.zero?
+        return "ごとし"
+      end
+      return "なんぢ" if @kana.empty?
     when "也"
       return "なり" if @kana.empty?
     when "之"
@@ -81,10 +87,12 @@ class Kakikudashi
     kunten_nodes = kuntens genbun
     seq = kakikudashi kunten_nodes
     seq.join(" / ")
-    seq.map{|node|
+    kaki = []
+    seq.each_with_index{|node, i|
       node.read
-      node.to_kan_furi
-    }.join
+      kaki << node.to_kan_furi(i)
+    }
+    kaki.join
   end
 
   def kuntens genbun
