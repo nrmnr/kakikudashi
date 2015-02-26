@@ -66,6 +66,8 @@ class Kunten
       return "のみ" if @kana.empty?
     when "将"
       return "す" if @read_times == 2 and @kana == "ニ"
+    when "未"
+      return "ず" if @read_times == 2 and @kana == "ダ"
     when "於"
       return "" if @kana.empty?
     end
@@ -74,6 +76,7 @@ class Kunten
 
   def is_saidoku
     return true if @kanji == "将" and @kaeri == "レ" and @kana == "ニ"
+    return true if @kanji == "未" and @kaeri == "レ" and @kana == "ダ"
     return false
   end
 
