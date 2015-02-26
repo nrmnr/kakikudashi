@@ -1,7 +1,9 @@
 #! ruby
 # coding: utf-8
 
-# ref:http://kou.benesse.co.jp/nigate/japanese/a13j0305.html
+# ref:
+# http://kou.benesse.co.jp/nigate/japanese/a13j0305.html
+# http://kou.benesse.co.jp/nigate/japanese/a13j0306.html
 
 class Kunten
   def initialize node, seq
@@ -68,7 +70,7 @@ class Kunten
       return "す" if @read_times == 2 and @kana == "ニ"
     when "未"
       return "ず" if @read_times == 2 and @kana == "ダ"
-    when "於"
+    when /[而焉矣於于乎]/
       return "" if @kana.empty?
     end
     return @kanji + furigana
