@@ -10,6 +10,7 @@ class Kunten
     @read_times = 0
   end
   attr_reader :kaeri, :seq
+  attr_writer :kaeri
 
   def read
     @read_times += 1
@@ -100,7 +101,7 @@ class Kakikudashi
     ni_ten = []
     jo_ten = []
     ko_ten = []
-    kunten_nodes.each do |node|
+    kunten_nodes.each_with_index do |node, i|
       case node.kaeri
       when "レ"
         @re_ten << node
@@ -120,6 +121,10 @@ class Kakikudashi
       when "甲"
         push_sequence node
         flush ko_ten
+      when "一レ", "上レ", "甲レ"
+        @re_ten << node
+        raise unless kunten_nodes[i+1]
+        kunten_nodes[i+1].kaeri = node.kaeri.sub(/レ/,"")
       else
         push_sequence node
       end
