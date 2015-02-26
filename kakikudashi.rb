@@ -21,7 +21,7 @@ class Kunten
     end
   end
 
-  def to_kan
+  def to_kan_furi
     case @kanji
     when "不"
       case @kana
@@ -60,7 +60,7 @@ class Kakikudashi
     seq.join(" / ")
     seq.map{|node|
       node.read
-      node.to_kan
+      node.to_kan_furi
     }.join
   end
 
