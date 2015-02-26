@@ -2,11 +2,14 @@
 # coding: utf-8
 $LOAD_PATH << "."
 
+require "rake/clean"
 require "kakikudashi"
 
 gen_f = "genbun.txt"
 act_f = "actual.txt"
 exp_f = "expect.txt"
+
+CLEAN << act_f
 
 file act_f => gen_f do
   k = Kakikudashi.new
