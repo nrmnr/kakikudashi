@@ -1,6 +1,8 @@
 #! ruby
 # coding: utf-8
 
+# ref:http://kou.benesse.co.jp/nigate/japanese/a13j0305.html
+
 class Kunten
   def initialize node, seq
     @kanji, @kana, @kaeri = node.scan(/^(.)([ァ-ヶ]+)?(?:\[(.+)\])?$/).flatten.map(&:to_s)
@@ -29,16 +31,36 @@ class Kunten
       when /^ルヲ?$/; return "ざ" + furigana
       else raise self.to_s
       end
-    when "将"
-      return "す" if @read_times == 2 and @kana == "ニ"
-    when "也"
-      return "なり" if @kana == ""
+    when "弗"
+      return "ず" if @kana.empty?
     when "可"
       return "べ" + furigana
-    when "乎"
-      return "や" if @kana == ""
+    when "使", "令"
+      return "しむ" if @kana == "ム"
+    when "見", "被"
+      return "る" if @kana.empty?
+    when "如", "若"
+      return "ごとし" if @kana == "シ"
+    when "也"
+      return "なり" if @kana.empty?
+    when "之"
+      return "の" if @kana.empty?
+    when "由"
+      return "より" if @kana.empty?
+    when "自", "従"
+      return "より" if @kana == "リ"
+    when "与"
+      return "と" if @kana.empty?
+    when "者"
+      return "は" if @kana.empty?
+    when "乎", "哉", "邪"
+      return "や" if @kana.empty?
+    when "耳"
+      return "のみ" if @kana.empty?
+    when "将"
+      return "す" if @read_times == 2 and @kana == "ニ"
     when "於"
-      return "" if @kana == ""
+      return "" if @kana.empty?
     end
     return @kanji + furigana
   end
