@@ -151,7 +151,10 @@ class Kakikudashi
   end
 
   def flush ten_stack
-    raise "stack empty" if ten_stack.empty?
+    if ten_stack.empty?
+      seq = @sequence.map{|node| node.to_s}.join(" - ")
+      raise "stack empty:#{seq}"
+    end
     push_sequence ten_stack.pop until ten_stack.empty?
   end
 end
