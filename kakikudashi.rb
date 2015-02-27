@@ -7,15 +7,24 @@
 
 class Kunten
   def initialize node, seq
-    @kanji, @kana, @kaeri = node.scan(/^(.)([ァ-ヶ]+)?(?:\[(.+)\])?$/).flatten.map(&:to_s)
+    @kanji, @kana, @kaeri = node.scan(/^([^ァ-ヶ\[\]]+)([ァ-ヶ]+)?(?:\[(.+)\])?$/).flatten.map(&:to_s)
+    raise to_s if @kaeri =~ /^\|/ and !@kana.empty?
     @seq = seq
     @read_times = 0
   end
-  attr_reader :kaeri, :seq
+  attr_reader :kanji, :kana, :kaeri, :seq
   attr_writer :kaeri
 
   def read
     @read_times += 1
+  end
+
+  def to_raw
+    if @kaeri.empty?
+      "#{@kanji}#{@kana}"
+    else
+      "#{@kanji}#{@kana}[#{@kaeri}]"
+    end
   end
 
   def to_s
@@ -90,6 +99,7 @@ end
 class Kakikudashi
   def conv genbun
     kunten_nodes = kuntens genbun
+    kunten_nodes = punc_hyphen kunten_nodes
     seq = kakikudashi kunten_nodes
     seq.join(" / ")
     kaki = []
@@ -106,6 +116,28 @@ class Kakikudashi
       i += 1
       Kunten.new node, i
     }
+  end
+
+  def punc_hyphen kunten_nodes
+    arr = []
+    i = 0
+    index = 0
+    while i < kunten_nodes.size
+      node = kunten_nodes[i]
+      if node.kaeri =~ /^\|/
+        raise node.to_s + kunten_nodes[i+1].to_s unless kunten_nodes[i+1].kaeri.empty?
+        kanji = node.kanji + kunten_nodes[i+1].kanji
+        kaeri = node.kaeri.sub(/\|/, "")
+        kana = kunten_nodes[i+1].kana
+        arr << Kunten.new("#{kanji}#{kana}[#{kaeri}]", index)
+        i += 1 # skip next node
+      else
+        arr << Kunten.new(node.to_raw, index)
+      end
+      i += 1
+      index += 1
+    end
+    return arr
   end
 
   def kakikudashi kunten_nodes
