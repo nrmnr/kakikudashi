@@ -14,7 +14,9 @@ CLEAN << act_f
 file act_f => gen_f do
   k = Kakikudashi.new
   open(act_f, 'w:utf-8') do |f|
-    f.puts open(gen_f, 'r:utf-8', &:readlines).map{|line| k.conv line.chomp}
+    open(gen_f, 'r:utf-8', &:readlines).each{|line|
+      f.puts k.conv(line.chomp)
+    }
   end
 end
 
