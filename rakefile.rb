@@ -22,10 +22,19 @@ task :show => act_f do
   puts open(act_f, 'r:utf-8', &:read)
 end
 
-task :test => [act_f, exp_f] do
-  act = open(act_f, 'r:utf-8', &:read)
-  exp = open(exp_f, 'r:utf-8', &:read)
-  puts((act == exp)? "OK":"NG")
+def lines file
+  open(file, 'r:utf-8', &:readlines).map(&:chomp)
 end
 
-task :default => [:show, :test]
+task :test => [act_f, exp_f] do
+  act = lines act_f
+  exp = lines exp_f
+  act.zip(exp).each do |a, e|
+    if a != e
+      puts "act: #{a}"
+      puts "exp: #{e}"
+    end
+  end
+end
+
+task :default => [:test]
