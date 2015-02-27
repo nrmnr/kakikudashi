@@ -40,7 +40,7 @@ class Kunten
     when "不"
       case @kana
       when "","ンバ","シテ"; return "ず" + furigana
-      when /^ルヲ?$/; return "ざ" + furigana
+      when /^ル/; return "ざ" + furigana
       else raise self.to_s
       end
     when "弗"
