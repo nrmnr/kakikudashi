@@ -109,6 +109,7 @@ class Kakikudashi
   } # ■：番兵
 
   def conv genbun
+    return "" if genbun.empty?
     @kunten_nodes = get_kuntens genbun
     @kunten_nodes.unshift nil # 番兵
     build_sequence
