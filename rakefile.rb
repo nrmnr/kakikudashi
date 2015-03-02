@@ -11,7 +11,7 @@ exp_f = "expect.txt"
 
 CLEAN << act_f
 
-file act_f => gen_f do
+file act_f => [gen_f, "kakikudashi.rb"] do
   k = Kakikudashi.new
   open(act_f, 'w:utf-8') do |f|
     open(gen_f, 'r:utf-8', &:readlines).each{|line|

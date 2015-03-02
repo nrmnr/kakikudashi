@@ -7,35 +7,25 @@
 
 class Kunten
   def initialize node, seq
-    @kanji, @kana, @kaeri = node.scan(/^([^ァ-ヶ\[\]]+)([ァ-ヶ]+)?(?:\[(.+)\])?$/).flatten.map(&:to_s)
+    @kanji, @kana, @sai, @kaeri = *node.scan(/^([^ァ-ヶ\[\(]+)([ァ-ヶ]+)?(?:\((.+)\))?(?:\[(.+)\])?$/).flatten.map(&:to_s)
     raise to_s if @kaeri =~ /^\|/ and !@kana.empty?
     @seq = seq
     @read_times = 0
   end
-  attr_reader :kanji, :kana, :kaeri, :seq
-  attr_writer :kaeri
+  attr_reader :kaeri
+
+  def to_s
+    "%s%s(%s)[%s]" % [@kanji, @kana, @sai, @kaeri]
+  end
 
   def read
     @read_times += 1
   end
 
-  def to_raw
-    if @kaeri.empty?
-      "#{@kanji}#{@kana}"
-    else
-      "#{@kanji}#{@kana}[#{@kaeri}]"
-    end
-  end
-
-  def to_s
-    if @kanji =~ /[。、]/
-      @kanji
-    else
-      "%s(%s)[%s]" % [@kanji, @kana, @kaeri]
-    end
-  end
-
   def to_kan_furi index
+    raise self if @read_times > 2
+    return to_kan_furi_saidoku if @read_times == 2
+
     case @kanji
     when "不"
       case @kana
@@ -55,8 +45,7 @@ class Kunten
       return "ごとし" if @kana == "シ"
     when "若"
       if @kana == "シ"
-        return "もし" if index.zero?
-        return "ごとし"
+        return index.zero? ? "もし" : "ごとし"
       end
       return "なんぢ" if @kana.empty?
     when "也"
@@ -75,119 +64,140 @@ class Kunten
       return "や" if @kana.empty?
     when "耳"
       return "のみ" if @kana.empty?
-    when "将"
-      return "す" if @read_times == 2 and @kana == "ニ"
-    when "未"
-      return "ず" if @read_times == 2 and @kana == "ダ"
     when /[而焉矣於于乎]/
       return "" if @kana.empty?
     end
     return @kanji + furigana
   end
 
-  def is_saidoku
-    return true if @kanji == "将" and @kaeri == "レ" and @kana == "ニ"
-    return true if @kanji == "未" and @kaeri == "レ" and @kana == "ダ"
+  def to_kan_furi_saidoku
+    case @kanji
+    when "将"
+      return "す" + saidoku
+    when "当"
+      return "べ" + saidoku
+    when "須"
+      return "べ" + saidoku
+    when "猶"
+      return "ごと" + saidoku
+    when "未"
+      return @sai.empty? ? "ず" : "ざ" + saidoku
+    end
+  end
+
+  def saidoku?
+    return true unless @sai.empty?
+    return true if @kanji == "将" and @kana == "ニ"
+    return true if @kanji == "当" and @kana == "ニ"
+    return true if @kanji == "須" and @kana == "ラク"
+    return true if @kanji == "猶" and @kana == "ホ"
+    return true if @kanji == "未" and @kana == "ダ"
     return false
   end
 
   def furigana
     @kana.tr("ァ-ン", "ぁ-ん")
   end
+
+  def saidoku
+    @sai.tr("ァ-ン", "ぁ-ん")
+  end
 end
 
 class Kakikudashi
+  KAERITEN_MAP = {
+    "一" => /二/, "二" => /三/, "三" => /四/, "四" => /■/,
+    "上" => /[中下]/, "中" => /下/, "下" => /■/,
+    "甲" => /乙/, "乙" => /丙/, "丙" => /丁/, "丁" => /■/,
+    "天" => /地/, "地" => /人/, "人" => /■/
+  } # ■：番兵
+
   def conv genbun
-    kunten_nodes = kuntens genbun
-    kunten_nodes = punc_hyphen kunten_nodes
-    seq = kakikudashi kunten_nodes
-    seq.join(" / ")
+    @kunten_nodes = get_kuntens genbun
+    @kunten_nodes.unshift nil # 番兵
+    build_sequence
     kaki = []
-    seq.each_with_index{|node, i|
+    @sequence.each_with_index{|node, i|
       node.read
-      kaki << node.to_kan_furi(i)
+      kaki << node.to_kan_furi(i-1)
     }
     kaki.join
   end
 
-  def kuntens genbun
-    i = 0
+  def get_kuntens genbun
+    i = -1
     genbun.split(/\s+/).map{|node|
       i += 1
       Kunten.new node, i
     }
   end
 
-  def punc_hyphen kunten_nodes
-    arr = []
-    i = 0
-    index = 0
-    while i < kunten_nodes.size
-      node = kunten_nodes[i]
-      if node.kaeri =~ /^\|/
-        raise node.to_s + kunten_nodes[i+1].to_s unless kunten_nodes[i+1].kaeri.empty?
-        kanji = node.kanji + kunten_nodes[i+1].kanji
-        kaeri = node.kaeri.sub(/\|/, "")
-        kana = kunten_nodes[i+1].kana
-        arr << Kunten.new("#{kanji}#{kana}[#{kaeri}]", index)
-        i += 1 # skip next node
-      else
-        arr << Kunten.new(node.to_raw, index)
-      end
-      i += 1
-      index += 1
-    end
-    return arr
-  end
-
-  def kakikudashi kunten_nodes
+  def build_sequence
     @sequence = []
-    @re_ten = []
-    ni_ten = []
-    jo_ten = []
-    ko_ten = []
-    kunten_nodes.each_with_index do |node, i|
-      case node.kaeri
-      when "レ"
-        @re_ten << node
-        push_sequence node if node.is_saidoku
-      when "二", "三"
-        ni_ten << node
-      when "一"
-        push_sequence node
-        flush ni_ten
-      when "中", "下"
-        jo_ten << node
-      when "上"
-        push_sequence node
-        flush jo_ten
-      when "乙", "丙", "丁"
-        ko_ten << node
-      when "甲"
-        push_sequence node
-        flush ko_ten
-      when "一レ", "上レ", "甲レ"
-        @re_ten << node
-        raise unless kunten_nodes[i+1]
-        kunten_nodes[i+1].kaeri = node.kaeri.sub(/レ/,"")
+    forward 1
+  end
+
+  def forward i
+    node = @kunten_nodes[i]
+    return if node.nil?
+    prev_node = @kunten_nodes[i-1]
+    case node.kaeri
+    when "レ", /^[一上甲天]レ$/, /^[二三四中下乙丙丁地人]$/
+      @sequence << node if node.saidoku?
+      forward i+1
+    when /^\|/
+      forward i+2
+    when /^[一上甲天]$/
+      push_sequence i
+      backward i-1, KAERITEN_MAP[node.kaeri]
+      forward i+1
+    else
+      push_sequence i
+      forward i+1
+    end
+  end
+
+  def backward i, series
+    node = @kunten_nodes[i]
+    return if node.nil?
+    unless node.kaeri =~ series
+      backward i-1, series
+      return
+    end
+    prev_node = @kunten_nodes[i-1]
+    next_node = @kunten_nodes[i+1]
+    if prev_node.nil?
+      push_sequence i
+    elsif node.kaeri =~ /^\|/
+      push_sequence i
+      backward i-1, KAERITEN_MAP[node.kaeri.sub(/^\|/, "")]
+    else
+      push_sequence i
+      if prev_node.kaeri =~ /レ/
+        backward i-2, KAERITEN_MAP[node.kaeri]
       else
-        push_sequence node
+        backward i-1, KAERITEN_MAP[node.kaeri]
       end
     end
-    return @sequence
   end
 
-  def push_sequence node
-    @sequence << node
-    push_sequence @re_ten.pop if !@re_ten.empty? and @re_ten.last.seq == node.seq-1
-  end
-
-  def flush ten_stack
-    if ten_stack.empty?
-      seq = @sequence.map{|node| node.to_s}.join(" - ")
-      raise "stack empty:#{seq}"
+  def push_sequence i
+    node = @kunten_nodes[i]
+    if node.kaeri =~ /^\|/
+      next_node = @kunten_nodes[i+1]
+      raise unless next_node
+      @sequence << node
+      @sequence << next_node
+      return
     end
-    push_sequence ten_stack.pop until ten_stack.empty?
+    @sequence << node
+    prev_node = @kunten_nodes[i-1]
+    if prev_node and prev_node.kaeri =~ /レ/
+      push_sequence i-1
+    end
+    if node.kaeri =~ /^[一上甲天]レ$/
+      backward i-1, KAERITEN_MAP[node.kaeri.gsub(/[\|レ]/, "")]
+    end
   end
 end
 
