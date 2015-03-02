@@ -12,27 +12,14 @@ class Kunten
     @seq = seq
     @read_times = 0
   end
-  attr_reader :kanji, :kana, :sai, :kaeri, :seq
-  attr_writer :kaeri
+  attr_reader :kaeri
+
+  def to_s
+    "%s%s(%s)[%s]" % [@kanji, @kana, @sai, @kaeri]
+  end
 
   def read
     @read_times += 1
-  end
-
-  def to_raw
-    if @kaeri.empty?
-      "#{@kanji}#{@kana}"
-    else
-      "#{@kanji}#{@kana}[#{@kaeri}]"
-    end
-  end
-
-  def to_s
-    if @kanji =~ /[。、]/
-      @kanji
-    else
-      "%s(%s)[%s]" % [@kanji, @kana, @kaeri]
-    end
   end
 
   def to_kan_furi index
@@ -76,9 +63,17 @@ class Kunten
     when "耳"
       return "のみ" if @kana.empty?
     when "将"
-      return "す" if @read_times == 2 and @kana == "ニ"
+      return "す" + saidoku if @read_times == 2
+    when "当"
+      return "べ" + saidoku if @read_times == 2
+    when "須"
+      return "べ" + saidoku if @read_times == 2
+    when "猶"
+      return "ごと" + saidoku if @read_times == 2
     when "未"
-      return "ず" if @read_times == 2 and @kana == "ダ"
+      if @read_times == 2
+        return @sai.empty? ? "ず" : "ざ" + saidoku
+      end
     when /[而焉矣於于乎]/
       return "" if @kana.empty?
     end
@@ -86,13 +81,21 @@ class Kunten
   end
 
   def saidoku?
-    return true if @kanji == "将" and @kaeri == "レ" and @kana == "ニ"
-    return true if @kanji == "未" and @kaeri == "レ" and @kana == "ダ"
+    return true unless @sai.empty?
+    return true if @kanji == "将" and @kana == "ニ"
+    return true if @kanji == "当" and @kana == "ニ"
+    return true if @kanji == "須" and @kana == "ラク"
+    return true if @kanji == "猶" and @kana == "ホ"
+    return true if @kanji == "未" and @kana == "ダ"
     return false
   end
 
   def furigana
     @kana.tr("ァ-ン", "ぁ-ん")
+  end
+
+  def saidoku
+    @sai.tr("ァ-ン", "ぁ-ん")
   end
 end
 
@@ -134,13 +137,11 @@ class Kakikudashi
     return if node.nil?
     prev_node = @kunten_nodes[i-1]
     case node.kaeri
-    when "レ"
-      push_sequence i if node.saidoku?
+    when "レ", /^[一上甲天]レ$/, /^[二三四中下乙丙丁地人]$/
+      @sequence << node if node.saidoku?
       forward i+1
     when /^\|/
       forward i+2
-    when /^[二三四中下乙丙丁地人]$/, /^[一上甲天]レ$/
-      forward i+1
     when /^[一上甲天]$/
       push_sequence i
       backward i-1, KAERITEN_MAP[node.kaeri]
