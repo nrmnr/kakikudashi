@@ -23,6 +23,9 @@ class Kunten
   end
 
   def to_kan_furi index
+    raise self if @read_times > 2
+    return to_kan_furi_saidoku if @read_times == 2
+
     case @kanji
     when "不"
       case @kana
@@ -42,8 +45,7 @@ class Kunten
       return "ごとし" if @kana == "シ"
     when "若"
       if @kana == "シ"
-        return "もし" if index.zero?
-        return "ごとし"
+        return index.zero? ? "もし" : "ごとし"
       end
       return "なんぢ" if @kana.empty?
     when "也"
@@ -62,22 +64,25 @@ class Kunten
       return "や" if @kana.empty?
     when "耳"
       return "のみ" if @kana.empty?
-    when "将"
-      return "す" + saidoku if @read_times == 2
-    when "当"
-      return "べ" + saidoku if @read_times == 2
-    when "須"
-      return "べ" + saidoku if @read_times == 2
-    when "猶"
-      return "ごと" + saidoku if @read_times == 2
-    when "未"
-      if @read_times == 2
-        return @sai.empty? ? "ず" : "ざ" + saidoku
-      end
     when /[而焉矣於于乎]/
       return "" if @kana.empty?
     end
     return @kanji + furigana
+  end
+
+  def to_kan_furi_saidoku
+    case @kanji
+    when "将"
+      return "す" + saidoku
+    when "当"
+      return "べ" + saidoku
+    when "須"
+      return "べ" + saidoku
+    when "猶"
+      return "ごと" + saidoku
+    when "未"
+      return @sai.empty? ? "ず" : "ざ" + saidoku
+    end
   end
 
   def saidoku?
