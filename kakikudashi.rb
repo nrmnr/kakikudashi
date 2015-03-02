@@ -198,6 +198,7 @@ class Kakikudashi
 
   def replace_nomi kaki
     kaki.gsub! /而已[矣焉耳]/, "のみ"
+    kaki.gsub! /耳(?![一-龠])/u, "のみ"
     kaki.gsub! /[而焉矣於于乎]/, ""
     return kaki
   end
