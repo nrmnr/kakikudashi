@@ -62,10 +62,6 @@ class Kunten
       return "は" if @kana.empty?
     when "乎", "哉", "邪"
       return "や" if @kana.empty?
-    when "耳"
-      return "のみ" if @kana.empty?
-    when /[而焉矣於于乎]/
-      return "" if @kana.empty?
     end
     return @kanji + furigana
   end
@@ -121,7 +117,7 @@ class Kakikudashi
       node.read
       kaki << node.to_kan_furi(i-1)
     }
-    kaki.join
+    return replace_nomi kaki.join
   end
 
   def get_kuntens genbun
@@ -198,6 +194,12 @@ class Kakikudashi
     if node.kaeri =~ /^[一上甲天]レ$/
       backward i-1, KAERITEN_MAP[node.kaeri.gsub(/[\|レ]/, "")]
     end
+  end
+
+  def replace_nomi kaki
+    kaki.gsub! /而已[矣焉耳]/, "のみ"
+    kaki.gsub! /[而焉矣於于乎]/, ""
+    return kaki
   end
 end
 
