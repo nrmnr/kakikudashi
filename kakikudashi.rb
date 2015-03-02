@@ -70,6 +70,8 @@ class Kunten
     case @kanji
     when "将"
       return "す" + saidoku
+    when "且"
+      return "す" + saidoku
     when "当"
       return "べ" + saidoku
     when "須"
@@ -84,6 +86,7 @@ class Kunten
   def saidoku?
     return true unless @sai.empty?
     return true if @kanji == "将" and @kana == "ニ"
+    return true if @kanji == "且" and @kana == "ニ"
     return true if @kanji == "当" and @kana == "ニ"
     return true if @kanji == "須" and @kana == "ラク"
     return true if @kanji == "猶" and @kana == "ホ"
