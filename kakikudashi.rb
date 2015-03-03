@@ -48,8 +48,6 @@ class Kunten
         return index.zero? ? "もし" : "ごとし"
       end
       return "なんぢ" if @kana.empty?
-    when "也"
-      return "なり" if @kana.empty?
     when "之"
       return "の" if @kana.empty?
     when "由"
@@ -58,9 +56,7 @@ class Kunten
       return "より" if @kana == "リ"
     when "与"
       return "と" if @kana.empty?
-    when "者"
-      return "は" if @kana.empty?
-    when "乎", "哉", "邪"
+    when "乎", "邪"
       return "や" if @kana.empty?
     end
     return @kanji + furigana
